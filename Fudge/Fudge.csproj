@@ -41,7 +41,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DocumentationFile>bin\Debug\comments.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\Fudge.xml</DocumentationFile>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -221,11 +221,27 @@
   </Target>
   -->
 
-  <Target Name="PublishAllLocal" DependsOnTargets="Build">
-        <MakeDir Directories="$(BambooPublishDir)" />
-        <ItemGroup>
-          <MySourceFiles  Include="bin\**"/>
-        </ItemGroup>
-        <Copy SourceFiles ="@(MySourceFiles)" DestinationFolder="$(BambooPublishDir)" />
+  <!-- Build deploy zips -->
+  <Import Project="$(MSBuildExtensionsPath)\MSBuildCommunityTasks\MSBuild.Community.Tasks.Targets"
+  Condition="exists('$(MSBuildExtensionsPath)\MSBuildCommunityTasks\MSBuild.Community.Tasks.Targets')"/>
+  
+  <Target Name="DeployZips">
+	 <ItemGroup>
+        <ConfigList Condition=" '@(ConfigList)' == '' and $(Config) != '' " Include="$(Config.Split('+'))" />
+        <ConfigList Condition=" '@(ConfigList)' == '' " Include="Debug;Release" /><!-- if no configurations were specified, default to both standard -->
+    </ItemGroup>
+	<MSBuild Projects="$(MSBuildProjectFile)" Properties="Configuration=%(ConfigList.Identity)" Targets="DeployZip" />
+  </Target>
+
+  
+  <Target Name="DeployZip" DependsOnTargets="Build" >
+	<ItemGroup>
+		<ZipFiles Include="$(OutputPath)\*.*" />
+	</ItemGroup>
+	<MakeDir Directories="$(MSBuildProjectDirectory)\builds" Condition="!Exists('$(MSBuildProjectDirectory)\builds')" />
+	<Zip Files="@(ZipFiles)"
+       WorkingDirectory="$(OutputPath)" 
+       ZipFileName="$(MSBuildProjectDirectory)\builds\$(AssemblyName)-$(Configuration).zip"
+       ZipLevel="9" /> 
   </Target>
 </Project>
