@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -98,12 +98,14 @@
     <Compile Include="FudgeStreamElement.cs" />
     <Compile Include="FudgeStreamParser.cs" />
     <Compile Include="IAppendingFudgeFieldContainer.cs" />
+    <Compile Include="Serialization\MessageFudgeDeserializationContext.cs" />
     <Compile Include="Serialization\Reflection\DataContractSurrogate.cs" />
     <Compile Include="Serialization\Reflection\DotNetSeializationSurrogateSurrogate.cs" />
     <Compile Include="Serialization\Reflection\DotNetSerializableSurrogate.cs" />
     <Compile Include="Serialization\Reflection\ImmutableSurrogate.cs" />
     <Compile Include="Serialization\Reflection\ReflectionUtil.cs" />
     <Compile Include="Serialization\Reflection\SerializableAttributeSurrogate.cs" />
+    <Compile Include="Serialization\ReaderFudgeDeserializationContext.cs" />
     <Compile Include="Util\FudgeStreamPipe.cs" />
     <Compile Include="IFudgeFieldContainer.cs" />
     <Compile Include="FudgeFieldType.cs" />
@@ -220,28 +222,21 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-
   <!-- Build deploy zips -->
-  <Import Project="$(MSBuildExtensionsPath)\MSBuildCommunityTasks\MSBuild.Community.Tasks.Targets"
-  Condition="exists('$(MSBuildExtensionsPath)\MSBuildCommunityTasks\MSBuild.Community.Tasks.Targets')"/>
-  
+  <Import Project="$(MSBuildExtensionsPath)\MSBuildCommunityTasks\MSBuild.Community.Tasks.Targets" Condition="exists('$(MSBuildExtensionsPath)\MSBuildCommunityTasks\MSBuild.Community.Tasks.Targets')" />
   <Target Name="DeployZips">
-	 <ItemGroup>
-        <ConfigList Condition=" '@(ConfigList)' == '' and $(Config) != '' " Include="$(Config.Split('+'))" />
-        <ConfigList Condition=" '@(ConfigList)' == '' " Include="Debug;Release" /><!-- if no configurations were specified, default to both standard -->
+    <ItemGroup>
+      <ConfigList Condition=" '@(ConfigList)' == '' and $(Config) != '' " Include="$(Config.Split('+'))" />
+      <ConfigList Condition=" '@(ConfigList)' == '' " Include="Debug;Release" />
+      <!-- if no configurations were specified, default to both standard -->
     </ItemGroup>
-	<MSBuild Projects="$(MSBuildProjectFile)" Properties="Configuration=%(ConfigList.Identity)" Targets="DeployZip" />
+    <MSBuild Projects="$(MSBuildProjectFile)" Properties="Configuration=%(ConfigList.Identity)" Targets="DeployZip" />
   </Target>
-
-  
-  <Target Name="DeployZip" DependsOnTargets="Build" >
-	<ItemGroup>
-		<ZipFiles Include="$(OutputPath)\*.*" />
-	</ItemGroup>
-	<MakeDir Directories="$(MSBuildProjectDirectory)\builds" Condition="!Exists('$(MSBuildProjectDirectory)\builds')" />
-	<Zip Files="@(ZipFiles)"
-       WorkingDirectory="$(OutputPath)" 
-       ZipFileName="$(MSBuildProjectDirectory)\builds\$(AssemblyName)-$(Configuration).zip"
-       ZipLevel="9" /> 
+  <Target Name="DeployZip" DependsOnTargets="Build">
+    <ItemGroup>
+      <ZipFiles Include="$(OutputPath)\*.*" />
+    </ItemGroup>
+    <MakeDir Directories="$(MSBuildProjectDirectory)\builds" Condition="!Exists('$(MSBuildProjectDirectory)\builds')" />
+    <Zip Files="@(ZipFiles)" WorkingDirectory="$(OutputPath)" ZipFileName="$(MSBuildProjectDirectory)\builds\$(AssemblyName)-$(Configuration).zip" ZipLevel="9" />
   </Target>
 </Project>

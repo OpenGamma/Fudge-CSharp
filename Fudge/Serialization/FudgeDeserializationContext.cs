@@ -16,13 +16,9 @@
  */
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Runtime.Serialization;
 using Fudge.Types;
-using Fudge.Encodings;
 using System.Diagnostics;
-using Fudge.Util;
 
 namespace Fudge.Serialization
 {
@@ -32,25 +28,20 @@ namespace Fudge.Serialization
     /// <remarks>
     /// You should not need to use this class directly.
     /// </remarks>
-    internal class FudgeDeserializationContext : IFudgeDeserializer
+    internal abstract class FudgeDeserializationContext : IFudgeDeserializer
     {
         private readonly FudgeContext context;
         private readonly SerializationTypeMap typeMap;
-        private readonly IFudgeStreamReader reader;
-        private readonly FudgeMsgStreamWriter msgWriter;
-        private readonly FudgeStreamPipe pipe;
+        
         private readonly List<MsgAndObj> objectList;        // Holds messages and the objects they've deserialized into (for use with references)
         private readonly Dictionary<IFudgeFieldContainer, int> msgToIndexMap = new Dictionary<IFudgeFieldContainer, int>();
         private readonly Stack<State> stack;
         private readonly IFudgeTypeMappingStrategy typeMappingStrategy;
 
-        public FudgeDeserializationContext(FudgeContext context, SerializationTypeMap typeMap, IFudgeStreamReader reader, IFudgeTypeMappingStrategy typeMappingStrategy)
+        public FudgeDeserializationContext(FudgeContext context, SerializationTypeMap typeMap, IFudgeTypeMappingStrategy typeMappingStrategy)
         {
             this.context = context;
             this.typeMap = typeMap;
-            this.reader = reader;
-            this.msgWriter = new FudgeMsgStreamWriter(context);
-            this.pipe = new FudgeStreamPipe(reader, msgWriter);
             this.objectList = new List<MsgAndObj>();
             this.stack = new Stack<State>();
             this.typeMappingStrategy = typeMappingStrategy;
@@ -67,9 +58,7 @@ namespace Fudge.Serialization
         }
         public object DeserializeGraph(Type typeHint)
         {
-            // We simply return the first object
-            pipe.ProcessOne();
-            var msg = msgWriter.DequeueMessage();
+            FudgeMsg msg = GetMessage();
 
             WalkMessage(msg);
 
@@ -77,6 +66,8 @@ namespace Fudge.Serialization
 
             return result;
         }
+
+        protected abstract FudgeMsg GetMessage();
 
         #region IFudgeDeserializer Members
 
@@ -148,7 +139,6 @@ namespace Fudge.Serialization
         /// </summary>
         private void WalkMessage(FudgeMsg msg)
         {
-            // REVIEW 2010-03-06 t0rx -- This would be more efficient if done at the same time as streaming in rather than separately
             MsgAndObj msgAndObj = new MsgAndObj();
             msgAndObj.Msg = msg;
             int index = objectList.Count;

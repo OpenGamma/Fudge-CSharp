@@ -15,12 +15,7 @@
  * -->
  */
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Fudge.Encodings;
-using Fudge.Types;
-using Fudge.Serialization.Reflection;
 
 namespace Fudge.Serialization
 {
@@ -125,7 +120,7 @@ namespace Fudge.Serialization
             }
 
             // Delegate to FudgeDeserializer to do the work
-            var deserializer = new FudgeDeserializationContext(context, typeMap, reader, TypeMappingStrategy);
+            var deserializer = new ReaderFudgeDeserializationContext(context, typeMap, reader, TypeMappingStrategy);
             return deserializer.DeserializeGraph(null);
         }
 
@@ -143,7 +138,7 @@ namespace Fudge.Serialization
             }
 
             // Delegate to FudgeDeserializer to do the work
-            var deserializer = new FudgeDeserializationContext(context, typeMap, reader, TypeMappingStrategy);
+            var deserializer = new ReaderFudgeDeserializationContext(context, typeMap, reader, TypeMappingStrategy);
             return deserializer.DeserializeGraph<T>();
         }
 
@@ -155,8 +150,9 @@ namespace Fudge.Serialization
         /// <returns>Deserialized object graph.</returns>
         public object Deserialize(FudgeMsg msg)
         {
-            var reader = new FudgeMsgStreamReader(context, new FudgeMsg[] { msg });
-            return Deserialize(reader);
+            // Delegate to FudgeDeserializer to do the work
+            var deserializer = new MessageFudgeDeserializationContext(context, typeMap, TypeMappingStrategy, msg);
+            return deserializer.DeserializeGraph();
         }
 
         /// <summary>
@@ -167,8 +163,9 @@ namespace Fudge.Serialization
         /// <returns>Deserialized object graph.</returns>
         public T Deserialize<T>(FudgeMsg msg)
         {
-            var reader = new FudgeMsgStreamReader(context, new FudgeMsg[] { msg });
-            return Deserialize<T>(reader);
+            // Delegate to FudgeDeserializer to do the work
+            var deserializer = new MessageFudgeDeserializationContext(context, typeMap, TypeMappingStrategy, msg);
+            return deserializer.DeserializeGraph<T>();
         }
     }
 }
