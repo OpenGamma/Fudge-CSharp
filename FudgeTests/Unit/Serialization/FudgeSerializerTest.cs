@@ -257,6 +257,38 @@ namespace Fudge.Tests.Unit.Serialization
             Assert.NotSame(obj2, obj2.Other);
         }
 
+        /// <summary>
+        /// This makes sure that the serializer and deserializer agree on the order of type relative references
+        /// </summary>
+        [Fact]
+        public void RecursiveDataType_TypeReferences()
+        {
+            //
+            var context = new FudgeContext();
+            var serializer = new FudgeSerializer(context);
+
+
+            var obj = new RecursiveDataType { Data = "SomeString", Inner = new RecursiveDataType
+                            {
+                                Data = "SomeOtherString", 
+                                Inner =  new RecursiveDataType()
+                            }
+            };
+
+            // Serialize it to a MemoryStream
+            var stream = new MemoryStream();
+            var streamWriter = new FudgeEncodedStreamWriter(context, stream);
+            serializer.Serialize(streamWriter, obj);
+
+            // Reset the stream and deserialize a new object from it
+            stream.Position = 0;
+            var streamReader = new FudgeEncodedStreamReader(context, stream);
+            var cycledObj = (RecursiveDataType)serializer.Deserialize(streamReader);
+
+            // Just check a value matches
+            Assert.Equal(obj, cycledObj);
+        }
+
         public class TemperatureRange
         {
             public double High { get; set; }
@@ -356,5 +388,34 @@ namespace Fudge.Tests.Unit.Serialization
         }
 
         #endregion
+
+        public class RecursiveDataType
+        {
+            public RecursiveDataType Inner { get; set; }
+            public string Data { get; set; }
+
+            public bool Equals(RecursiveDataType other)
+            {
+                if (ReferenceEquals(null, other)) return false;
+                if (ReferenceEquals(this, other)) return true;
+                return Equals(other.Inner, Inner) && Equals(other.Data, Data);
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (ReferenceEquals(null, obj)) return false;
+                if (ReferenceEquals(this, obj)) return true;
+                if (obj.GetType() != typeof(RecursiveDataType)) return false;
+                return Equals((RecursiveDataType)obj);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return ((Inner != null ? Inner.GetHashCode() : 0) * 397) ^ (Data != null ? Data.GetHashCode() : 0);
+                }
+            }
+        }
     }
 }
