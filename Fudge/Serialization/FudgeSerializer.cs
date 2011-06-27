@@ -147,12 +147,13 @@ namespace Fudge.Serialization
         /// Convenience method to deserialize an object graph from a message.
         /// </summary>
         /// <param name="msg">Message containing serialized state.</param>
+        /// <param name="hintType">The type to use if not specified in the metadata.</param>
         /// <returns>Deserialized object graph.</returns>
-        public object Deserialize(FudgeMsg msg)
+        public object Deserialize(FudgeMsg msg, Type hintType =null)
         {
             // Delegate to FudgeDeserializer to do the work
             var deserializer = new MessageFudgeDeserializationContext(context, typeMap, TypeMappingStrategy, msg);
-            return deserializer.DeserializeGraph();
+            return deserializer.DeserializeGraph(hintType);
         }
 
         /// <summary>
