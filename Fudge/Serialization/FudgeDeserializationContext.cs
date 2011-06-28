@@ -144,11 +144,12 @@ namespace Fudge.Serialization
             int index = objectList.Count;
             objectList.Add(msgAndObj);
             msgToIndexMap[msg] = index;
-            foreach (var field in msg)
+            for (int i = 0; i < msg.GetFastFields().Count; i++)
             {
+                var field = msg.GetFastFields()[i];
                 if (field.Type == FudgeMsgFieldType.Instance)
                 {
-                    WalkMessage((FudgeMsg)field.Value);
+                    WalkMessage((FudgeMsg) field.Value);
                 }
             }
         }

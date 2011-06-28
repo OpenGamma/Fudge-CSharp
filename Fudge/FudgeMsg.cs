@@ -793,6 +793,15 @@ namespace Fudge
             return copy.GetEnumerator();
         }
 
+        /// <summary>
+        /// A fast version of <see cref="GetEnumerator()"/>, 
+        /// </summary>
+        /// <returns></returns>
+        internal IList<FudgeMsgField> GetFastFields()
+        {
+            return fields;
+        }
+
 
         #endregion
 
