@@ -62,6 +62,25 @@ namespace Fudge.Tests.Unit.Serialization.Reflection
             Assert.IsType<InterfaceSurrogateTestSurrogate>(surrogate);
             Assert.Equal(typeof(ISurrogateTest), ((InterfaceSurrogateTestSurrogate)surrogate).Type);
             Assert.Same(context, ((InterfaceSurrogateTestSurrogate)surrogate).Context);
+
+            //SurrogateEnumTest is an enum
+            surrogate = selector.GetSurrogate(typeof(SurrogateEnumTest), FudgeFieldNameConvention.Identity);
+            Assert.IsType<SurrogateEnumTestSurrogate>(surrogate);
+            Assert.Equal(typeof(SurrogateEnumTest), ((SurrogateEnumTestSurrogate)surrogate).Type);
+            Assert.Same(context, ((SurrogateEnumTestSurrogate)surrogate).Context);
+        }
+
+        [Fact]
+        public void EnumSurrogateCalled()
+        {
+            var a = SurrogateEnumTest.A;
+
+            var serializer = new FudgeSerializer(context);
+            var msg = serializer.SerializeToMsg(a);
+
+            var obj2 = (SurrogateEnumTest)serializer.Deserialize(msg);
+
+            Assert.Equal(a, obj2);
         }
 
         #region Test classes
@@ -238,6 +257,40 @@ namespace Fudge.Tests.Unit.Serialization.Reflection
             public object Deserialize(IFudgeFieldContainer msg, IFudgeDeserializer deserializer)
             {
                 throw new NotImplementedException();
+            }
+
+            #endregion
+        }
+
+        [FudgeSurrogate(typeof(SurrogateEnumTestSurrogate))]
+        private enum SurrogateEnumTest
+        {
+            A, B, C
+        }
+
+        private class SurrogateEnumTestSurrogate : IFudgeSerializationSurrogate
+        {
+            public Type Type { get; set; }
+            public FudgeContext Context { get; set; }
+
+            public SurrogateEnumTestSurrogate(FudgeContext context, Type type)
+            {
+                this.Context = context;
+                this.Type = type;
+            }
+
+            #region IFudgeSerializationSurrogate Members
+
+            public void Serialize(object obj, IAppendingFudgeFieldContainer msg, IFudgeSerializer serializer)
+            {
+                msg.Add(1, Enum.GetName(typeof(SurrogateEnumTest), obj));
+            }
+
+            public object Deserialize(IFudgeFieldContainer msg, IFudgeDeserializer deserializer)
+            {
+                var deserialize = Enum.Parse(typeof (SurrogateEnumTest), msg.GetString(1));
+                deserializer.Register(msg, deserialize);
+                return deserialize;
             }
 
             #endregion

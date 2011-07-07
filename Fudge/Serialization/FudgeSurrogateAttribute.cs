@@ -21,7 +21,7 @@ namespace Fudge.Serialization
     /// <summary>
     /// Specifies a surrogate class that is used to perform the serialization/deserialization for this class.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Enum)]
     public class FudgeSurrogateAttribute : Attribute
     {
         private Type surrogateType;
