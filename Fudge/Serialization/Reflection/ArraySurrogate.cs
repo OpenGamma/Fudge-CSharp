@@ -55,7 +55,15 @@ namespace Fudge.Serialization.Reflection
             int index = 0;
             foreach (var field in msg)
             {
-                result[index++] = DeserializeField<T>(field, deserializer, typeData.SubTypeData.Kind);
+                if (field.Ordinal == null && field.Name == null)
+                {
+                    result[index++] = DeserializeField<T>(field, deserializer, typeData.SubTypeData.Kind);
+                }
+                else
+                {
+                    //See FRN-92
+                    throw new FudgeRuntimeException("Unexpected element (bad field " + field + ")");
+                }
             }
             return result;
         }
