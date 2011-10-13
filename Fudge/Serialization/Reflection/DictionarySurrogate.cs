@@ -121,6 +121,10 @@ namespace Fudge.Serialization.Reflection
                 {
                     values.Add(DeserializeField<V>(field, deserializer, typeData.SubType2Data.Kind));
                 }
+                else if (field.Ordinal == -1 || field.Ordinal == -2)
+                {
+                    //TODO should be able to use these type hints to read non-generic maps like FRJ-81
+                }
                 else
                 {
                     throw new FudgeRuntimeException("Sub-message doesn't contain a map (bad field " + field + ")");
