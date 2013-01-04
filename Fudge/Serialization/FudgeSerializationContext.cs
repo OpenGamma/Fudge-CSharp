@@ -14,15 +14,12 @@
  * limitations under the License.
  * -->
  */
+
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Fudge.Types;
-using Fudge.Encodings;
-using System.Collections;
 using System.Diagnostics;
 using System.Runtime.Serialization;
+using Fudge.Types;
 
 namespace Fudge.Serialization
 {
@@ -38,11 +35,10 @@ namespace Fudge.Serialization
         private readonly IFudgeStreamWriter writer;
         private readonly ObjectIDGenerator objectIndexMap = new ObjectIDGenerator();
         private readonly List<int> indexIdMap = new List<int>();
-        private readonly Dictionary<Type, int> lastTypes = new Dictionary<Type, int>();     // Tracks the last object of a given type
         private readonly SerializationTypeMap typeMap;
         private readonly IFudgeTypeMappingStrategy typeMappingStrategy;
         private readonly IndexedStack<State> inlineStack = new IndexedStack<State>();       // Used to check for cycles in inlined messages and keep track of the index of the current message
-        private int currentMessageId = 0;
+        private int currentMessageId;
 
         public FudgeSerializationContext(FudgeContext context, SerializationTypeMap typeMap, IFudgeStreamWriter writer, IFudgeTypeMappingStrategy typeMappingStrategy)
         {
@@ -61,8 +57,7 @@ namespace Fudge.Serialization
             var msg = new StreamingMessage(this);
 
             writer.StartMessage();
-            WriteTypeInformation(graph, currentMessageId, msg);
-            UpdateLastTypeInfo(graph);
+            WriteTypeInformation(graph, msg);
             SerializeContents(graph, currentMessageId, msg);
             writer.EndMessage();
         }
@@ -127,29 +122,13 @@ namespace Fudge.Serialization
             }
         }
 
-        private void UpdateLastTypeInfo(object obj)
-        {
-            lastTypes[obj.GetType()] = currentMessageId;
-        }
-
-        private void WriteTypeInformation(object obj, int id, IAppendingFudgeFieldContainer msg)
+        private void WriteTypeInformation(object obj, IAppendingFudgeFieldContainer msg)
         {
             Type type = obj.GetType();
-            int lastSeen;
-            if (lastTypes.TryGetValue(type, out lastSeen))
+            for (Type currentType = type; currentType != typeof(object); currentType = currentType.BaseType)
             {
-                // Already had something of this type
-                int offset = lastSeen - id;
-                msg.Add(null, FudgeSerializer.TypeIdFieldOrdinal, PrimitiveFieldTypes.IntType, offset);
-            }
-            else
-            {
-                // Not seen before, so write out with base types
-                for (Type currentType = type; currentType != typeof(object); currentType = currentType.BaseType)
-                {
-                    string typeName = typeMappingStrategy.GetName(currentType);
-                    msg.Add(null, FudgeSerializer.TypeIdFieldOrdinal, StringFieldType.Instance, typeName);
-                }
+                string typeName = typeMappingStrategy.GetName(currentType);
+                msg.Add(null, FudgeSerializer.TypeIdFieldOrdinal, StringFieldType.Instance, typeName);
             }
         }
 
@@ -211,9 +190,8 @@ namespace Fudge.Serialization
             writer.StartSubMessage(fieldName, ordinal);
             if (writeTypeInfo)
             {
-                WriteTypeInformation(value, currentMessageId, subMsg);
+                WriteTypeInformation(value, subMsg);
             }
-            UpdateLastTypeInfo(value);
             SerializeContents(value, currentMessageId, subMsg);
             writer.EndSubMessage();
         }

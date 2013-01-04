@@ -194,7 +194,7 @@ namespace Fudge.Serialization
             var message = objectList[index].Msg;
             objectList[index].Msg = null;                           // Just making sure we don't try to process the same one twice
 
-            Type objectType = GetObjectType(index, hintType, message);
+            Type objectType = GetObjectType(hintType, message);
             if (objectType == null)
             {
                 throw new FudgeRuntimeException(string.Format("Failed to find type for {0}", message));
@@ -226,7 +226,7 @@ namespace Fudge.Serialization
             return surrogate;
         }
 
-        private Type GetObjectType(int refId, Type hintType, FudgeMsg message)
+        private Type GetObjectType(Type hintType, FudgeMsg message)
         {
             Type objectType = null;
             IFudgeField typeField = message.GetByOrdinal(FudgeSerializer.TypeIdFieldOrdinal);
@@ -236,13 +236,11 @@ namespace Fudge.Serialization
                 {
                     throw new FudgeRuntimeException("Serialized object has no type ID");
                 }
-
                 objectType = hintType;
             }
             else if (typeField.Type == StringFieldType.Instance)
             {
-                // It's the first time we've seen this type in this graph, so it contains the type names
-                string typeName = (string)typeField.Value;
+                var typeName = (string) typeField.Value;
                 objectType = typeMappingStrategy.GetType(typeName);
                 if (objectType == null)
                 {
@@ -251,30 +249,16 @@ namespace Fudge.Serialization
                     {
                         objectType = typeMappingStrategy.GetType(typeNames[i]);
                         if (objectType != null)
-                            break;                   // Found it
+                        {
+                            // Found it
+                            break;
+                        }
                     }
                 }
             }
             else
             {
-                // We've got a type field, but it's not a string so it must be a reference back to where we last saw the type
-                int previousObjId = refId + Convert.ToInt32(typeField.Value);
-
-                if (previousObjId < 0 || previousObjId >= refId)
-                {
-                    throw new FudgeRuntimeException("Illegal relative type ID in sub-message: " + typeField.Value);
-                }
-
-                if (objectList[previousObjId].Obj != null)
-                {
-                    // Already deserialized it
-                    objectType = objectList[previousObjId].Obj.GetType();
-                }
-                else
-                {
-                    // Scan it's fields rather than deserializing (we don't have the same type hint as might be in its correct location)
-                    objectType = GetObjectType(previousObjId, hintType, objectList[previousObjId].Msg);
-                }
+                throw new NotSupportedException("Serialisation framework does not support back/forward references");
             }
             return objectType;
         }
