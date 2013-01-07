@@ -143,7 +143,7 @@ namespace Fudge.Serialization.Reflection
         private static DynamicMethod CreateDynamicMethod(Type owningType, Type returnType, Type[] argTypes)
         {
             DynamicMethod dynamicMethod;
-            if (owningType.IsInterface)
+            if (owningType.IsInterface || owningType.IsGenericType)
             {
                 // An interface can't own any code, but then it can't have any private properties either so that's fine
                 dynamicMethod = new DynamicMethod("", returnType, argTypes);

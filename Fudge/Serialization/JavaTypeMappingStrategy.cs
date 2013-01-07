@@ -86,6 +86,12 @@ namespace Fudge.Serialization
         /// <inheritdoc/>
         public override string GetName(Type type)
         {
+            if (type.IsGenericType)
+            {
+                // Effectively need to implement Java's type erasure!
+                type = type.GetGenericTypeDefinition();
+            }
+
             string name = base.GetName(type);
 
             // Split into package and class name
@@ -96,6 +102,11 @@ namespace Fudge.Serialization
 
             // Handle inner classes
             last = last.Replace('+', '$');
+
+            if (type.IsGenericType)
+            {
+                last = last.Substring(0, last.IndexOf("`"));
+            }
 
             // Convert package name to lower-case and add back in class name
             string newTail = string.Join(".", parts.Select(s => s.ToLower()).Concat(new string[] { last }).ToArray());
